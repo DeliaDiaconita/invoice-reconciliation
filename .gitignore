@@ -1,0 +1,23 @@
+# Python virtual environment
+.venv/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# VS Code
+.vscode/
+
+# Date reale / sensibile
+payments.csv
+Lista_facturi.xlsx
+confirmed_relations.json
+data/
+
+# Fișiere generate
+*.pdf
+
+# Windows
+Thumbs.db
