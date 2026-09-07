@@ -6,6 +6,12 @@ The project imports invoice data from Excel files and payment data from CSV bank
 
 The application also provides an interactive Streamlit dashboard where ambiguous matches can be manually accepted or rejected.
 
+## Dashboard
+
+The Streamlit dashboard provides a visual overview of the reconciliation results and allows manual review of ambiguous matches.
+
+![Invoice Reconciliation Dashboard](docs/dashboard.png)
+
 ## Features
 
 - Import invoices from Excel files
@@ -65,23 +71,26 @@ Confirmed payer-client relationships are stored and reused during future reconci
 
 Example:
 
+```text
 Invoice client: Popescu Ana
-Payment payer: Popescu Ion
-If the relationship is manually confirmed once, future payments from Popescu Ion can automatically match invoices belonging to Popescu Ana, provided the other reconciliation conditions are satisfied.
+Payment payer:  Popescu Ion
+```
 
+If the relationship is manually confirmed once, future payments from `Popescu Ion` can automatically match invoices belonging to `Popescu Ana`, provided the other reconciliation conditions are satisfied.
 
-# Technologies:
-Python
-Streamlit
-openpyxl
-pytest
-ReportLab
-CSV
-JSON
+## Technologies
 
-# Project structure:
+- Python
+- Streamlit
+- openpyxl
+- ReportLab
+- pytest
+- CSV and JSON processing
+
+## Project Structure
+
+```text
 invoice-reconciliation/
-│
 ├── dashboard.py
 ├── imports.py
 ├── main.py
@@ -89,31 +98,57 @@ invoice-reconciliation/
 ├── reconciliation.py
 ├── relations.py
 ├── report.py
-│
-├── tests/
-│   ├── test_manual_decisions.py
-│   ├── test_reconciliation.py
-│   └── test_relations.py
-│
-└── README.md
+├── requirements.txt
+├── README.md
+└── tests/
+    ├── test_manual_decisions.py
+    ├── test_reconciliation.py
+    └── test_relations.py
+├── docs/
+│   └── dashboard.png
+```
 
-# Running the Application:
+## Installation
+
+Install the required dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Running the Application
+
 Activate the virtual environment and run:
- - streamlit run dashboard.py
+
+```bash
+streamlit run dashboard.py
+```
+
 The dashboard allows the user to upload:
- - an Excel file containing invoices
- - a CSV file containing bank payments
+
+- an Excel file containing invoices
+- a CSV file containing bank payments
+
 The reconciliation process is then executed automatically.
 
-# Testing:
+## Testing
+
 The project includes automated tests using pytest.
+
 Run the tests with:
- - python -m pytest
 
-# Data Privacy:
+```bash
+python -m pytest
+```
+
+## Data Privacy
+
 Real invoice and bank payment data are excluded from the repository.
-The data/ directory and other sensitive files are ignored using .gitignore.
 
-# Project Purpose:
+The `data/` directory and other sensitive files are ignored using `.gitignore`.
+
+## Project Purpose
+
 This project was developed as a practical Python application for solving a real-world invoice reconciliation problem.
+
 The goal was to automate a previously manual process while still allowing human validation for ambiguous cases.
