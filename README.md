@@ -108,7 +108,7 @@ The reconciliation process is then executed automatically.
 # Testing:
 The project includes automated tests using pytest.
 Run the tests with:
- - pytest
+ - python -m pytest
 
 # Data Privacy:
 Real invoice and bank payment data are excluded from the repository.
