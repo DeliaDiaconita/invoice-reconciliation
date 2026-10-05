@@ -25,7 +25,9 @@ The Streamlit dashboard provides a visual overview of the reconciliation results
 - Manual Accept / Reject decisions
 - Persistent payer-client relationships
 - Identification of unpaid invoices
-- PDF reconciliation reports
+- Detection of unmatched incoming payments
+- Manual matching between unpaid invoices and unmatched payments, with amount equality enforced
+- PDF reconciliation reports including paid invoices, unpaid invoices, and unmatched incoming payments
 - Interactive Streamlit dashboard
 - Automated tests with pytest
 
@@ -58,6 +60,15 @@ Possible matches can be manually reviewed from the dashboard.
 
 Invoices for which no valid payment match is found are classified as unpaid.
 
+### Unmatched Incoming Payments
+
+Incoming payments that are not assigned to a direct or possible match are displayed separately in the dashboard.
+
+These payments can be manually associated with unpaid invoices when the payment amount is exactly equal to the invoice amount.
+
+Payments that remain unmatched are included in the PDF reconciliation report as unmatched incoming payments.
+
+
 ## Manual Decisions
 
 The Streamlit dashboard allows the user to:
@@ -66,6 +77,8 @@ The Streamlit dashboard allows the user to:
 - reject a possible match
 - automatically move accepted matches to Direct Matches
 - move invoices with no remaining candidates to Unpaid Invoices
+- manually match an unpaid invoice with an unmatched incoming payment when their amounts are equal
+- automatically remove manually matched payments from the unmatched payments list
 
 Confirmed payer-client relationships are stored and reused during future reconciliations.
 

@@ -14,12 +14,42 @@ def apply_rejected_matches(
         # ia datele despre posibile potriviri pentru factura respectiva
         data = results["possible_matches_by_invoice"][invoice_number]
 
+        # salvam plata respinsa inainte sa o stergem
+        rejected_payment = None
+
+        for payment in data["payments"]:
+            if payment["payment_id"] == payment_id:
+                rejected_payment = payment
+                break
+
         # eliminam plata respinsa din lista de posibile potriviri
         data["payments"] = [
             payment
             for payment in data["payments"]
             if payment["payment_id"] != payment_id
         ]
+
+        # verificam daca plata mai apare ca possible match la alta factura
+        payment_still_possible = False
+
+        for other_data in results["possible_matches_by_invoice"].values():
+
+            for payment in other_data["payments"]:
+
+                if payment["payment_id"] == payment_id:
+                    payment_still_possible = True
+                    break
+
+            if payment_still_possible:
+                break
+
+        # daca plata nu mai apare nicaieri ca possible match,
+        # o mutam in lista de incasari nematchuite
+        if rejected_payment is not None and not payment_still_possible:
+
+            if rejected_payment not in results["unmatched_payments"]:
+                results["unmatched_payments"].append(rejected_payment)
+
         # daca nu mai exista plati posibile pentru factura respectiva, o mutam in lista de facturi neplatite
         if not data["payments"]:
             del results["possible_matches_by_invoice"][invoice_number]
@@ -95,8 +125,64 @@ def apply_accepted_matches(
             del results["possible_matches_by_invoice"][other_invoice_number]
             # adaug factura in lista de facturi neplatite
             other_invoice = invoice_by_number[other_invoice_number]
+
             if other_invoice not in results["unmatched"]:
                 results["unmatched"].append(other_invoice)
+
+        # daca plata acceptata exista cumva si in unmatched_payments,
+        # o eliminam
+        results["unmatched_payments"] = [
+            payment
+            for payment in results["unmatched_payments"]
+            if payment["payment_id"] != payment_id
+        ]
+
+
+def apply_unmatched_manual_matches(results, invoices, manual_unmatched_matches):
+    invoice_by_number = {invoice["invoice_number"]: invoice for invoice in invoices}
+
+    for invoice_number, payment_id in manual_unmatched_matches:
+
+        # factura trebuie sa existe
+        if invoice_number not in invoice_by_number:
+            continue
+
+        invoice = invoice_by_number[invoice_number]
+
+        # factura trebuie sa fie in lista de facturi neplatite
+        if invoice not in results["unmatched"]:
+            continue
+
+        matched_payment = None
+
+        # cautam plata in lista de incasari nematchuite
+        for payment in results["unmatched_payments"]:
+
+            if payment["payment_id"] == payment_id:
+                matched_payment = payment
+                break
+
+        # daca plata nu mai exista, nu facem nimic
+        if matched_payment is None:
+            continue
+
+        # factura si plata trebuie sa aiba exact aceeasi suma
+        if invoice["amount"] != matched_payment["amount"]:
+            continue
+
+        # eliminam factura din lista de facturi neplatite
+        results["unmatched"] = [
+            unmatched_invoice
+            for unmatched_invoice in results["unmatched"]
+            if unmatched_invoice["invoice_number"] != invoice_number
+        ]
+
+        # eliminam plata din lista de incasari nematchuite
+        results["unmatched_payments"] = [
+            payment
+            for payment in results["unmatched_payments"]
+            if payment["payment_id"] != payment_id
+        ]
 
 
 # face schimbari manuale in rezultatele reconcilerii
@@ -105,6 +191,7 @@ def apply_manual_decisions(
     invoices,
     accepted_matches,
     rejected_matches,
+    manual_unmatched_matches,
 ):
 
     # am dat REJECT match
@@ -115,6 +202,14 @@ def apply_manual_decisions(
         results,
         invoices,
         accepted_matches,
+    )
+
+    # MATCH-URI MANUALE:
+    # factura neplatita + incasare nematchuita
+    apply_unmatched_manual_matches(
+        results,
+        invoices,
+        manual_unmatched_matches,
     )
 
     return results

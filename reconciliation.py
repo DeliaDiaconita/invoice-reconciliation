@@ -203,8 +203,25 @@ def reconcile(invoices, payments, confirmed_relations=None):
         unmatched,
     )
 
+    # PAS 3: INCASARI NEMATCHUITE
+    possible_payment_ids = set()
+
+    for match_data in possible_matches_by_invoice.values():
+        for payment in match_data["payments"]:
+            possible_payment_ids.add(payment["payment_id"])
+
+    unmatched_payments = []
+
+    for payment in payments:
+        if (
+            payment["payment_id"] not in matched_payment_ids
+            and payment["payment_id"] not in possible_payment_ids
+        ):
+            unmatched_payments.append(payment)
+
     return {
         "direct_matches": direct_matches,
         "possible_matches_by_invoice": possible_matches_by_invoice,
         "unmatched": unmatched,
+        "unmatched_payments": unmatched_payments,
     }

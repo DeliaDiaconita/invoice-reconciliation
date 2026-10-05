@@ -40,13 +40,16 @@ def generate_report_pdf(results):
     # creez datele din pdf
     elements = []
     styles = getSampleStyleSheet()
+
     elements.append(
         Paragraph(
             "Raport reconciliere facturi si plati",
             styles["Title"],
         )
     )
+
     elements.append(Spacer(1, 20))
+
     elements.append(
         Paragraph(
             "Facturi platite",
@@ -111,6 +114,40 @@ def generate_report_pdf(results):
     unmatched_table = Table(unmatched_data)
     apply_table_style(unmatched_table)
     elements.append(unmatched_table)
+
+    elements.append(Spacer(1, 20))
+
+    elements.append(
+        Paragraph(
+            "Incasari neasociate",
+            styles["Heading2"],
+        )
+    )
+    elements.append(Spacer(1, 10))
+    unmatched_payments_data = [
+        [
+            "Nume platitor",
+            "Data platii",
+            "Suma",
+        ]
+    ]
+    # lambda creează o funcție foarte scurtă, fără să-i dai un nume.
+    # pentru fiecare payment, folosește numele plătitorului, transformat în litere mici, ca regulă de sortare.
+    for payment in sorted(
+        results["unmatched_payments"],
+        key=lambda payment: payment["name"].lower(),
+    ):
+        unmatched_payments_data.append(
+            [
+                payment["name"],
+                payment["payment_date"],
+                f'{payment["amount"]: .2f} lei',
+            ]
+        )
+
+    unmatched_payments_table = Table(unmatched_payments_data)
+    apply_table_style(unmatched_payments_table)
+    elements.append(unmatched_payments_table)
 
     # face pdful cu datele pe care i le am dat eu
     doc.build(elements)

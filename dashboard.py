@@ -20,6 +20,9 @@ def initialize_session_state():
     if "rejected_matches" not in st.session_state:
         st.session_state.rejected_matches = set()
 
+    if "manual_unmatched_matches" not in st.session_state:
+        st.session_state.manual_unmatched_matches = set()
+
 
 def process_files(invoice_file, payment_file):
     invoices = load_invoices(invoice_file)
@@ -39,6 +42,7 @@ def process_files(invoice_file, payment_file):
     # ramase de la procesarea precedenta.
     st.session_state.accepted_matches = set()
     st.session_state.rejected_matches = set()
+    st.session_state.manual_unmatched_matches = set()
 
 
 def display_direct_matches(results):
@@ -59,6 +63,8 @@ def display_direct_matches(results):
         col2.write(match["client"])
         col3.write(match["payer_name"])
         col4.write(match["payment_date"])
+        # f = număr zecimal de tip float
+        # .2 = două zecimale.
         col5.write(f'{match["amount"]:.2f} lei')
 
 
@@ -125,22 +131,98 @@ def display_possible_matches(results):
                 handle_reject(pair)
 
 
+def handle_manual_unmatched_match(
+    invoice_number,
+    payment_id,
+):
+
+    pair = (
+        invoice_number,
+        payment_id,
+    )
+
+    # memoram match-ul manual
+    st.session_state.manual_unmatched_matches.add(pair)
+
+    # rerulam dashboardul pentru aplicarea modificarii
+    st.rerun()
+
+
 def display_unmatched(results):
     st.error("❌ FACTURI NEPLĂTITE")
 
-    col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3, col4 = st.columns([1, 2, 1, 3])
 
     col1.write("**Factură**")
     col2.write("**Client**")
     col3.write("**Sumă**")
+    col4.write("**Match manual**")
 
-    for invoice in results["unmatched"]:
+    for index, invoice in enumerate(results["unmatched"]):
 
-        col1, col2, col3 = st.columns([1, 2, 1])
+        col1, col2, col3, col4 = st.columns([1, 2, 1, 3])
 
         col1.write(invoice["invoice_number"])
         col2.write(invoice["client"])
         col3.write(f'{invoice["amount"]:.2f} lei')
+
+        available_payments = [
+            payment
+            for payment in results["unmatched_payments"]
+            if payment["amount"] == invoice["amount"]
+        ]
+
+        if available_payments:
+
+            payment_options = {
+                (
+                    f'{payment["name"]} | '
+                    f'{payment["payment_date"]} | '
+                    f'{payment["amount"]:.2f} lei'
+                ): payment["payment_id"]
+                for payment in available_payments
+            }
+
+            # am nevoie de key pt selectbox ca sa nu se reseteze la rerun
+            option_labels = list(payment_options.keys())
+
+            # label_visibility="collapsed" ascunde eticheta vizibilă a elementului Streamlit, dar păstrează componenta în interfață.
+            selected_payment = col4.selectbox(
+                "Alege încasarea",
+                option_labels,
+                key=f'manual_payment_{invoice["invoice_number"]}_{index}',
+                label_visibility="collapsed",
+            )
+
+            payment_id = payment_options[selected_payment]
+
+            if col4.button(
+                "Match",
+                key=f'manual_match_{invoice["invoice_number"]}_{index}',
+            ):
+                handle_manual_unmatched_match(
+                    invoice["invoice_number"],
+                    payment_id,
+                )
+
+        else:
+            col4.write("Nu există încasări cu aceeași sumă.")
+
+
+def display_unmatched_payments(results):
+    st.info("💡 Încasări neasociate cu facturi")
+    col1, col2, col3, col4 = st.columns([1, 2.5, 1.5, 1])
+    col1.write("**ID Încasare**")
+    col2.write("**Plătitor**")
+    col3.write("**Data plății**")
+    col4.write("**Sumă**")
+
+    for payment in results["unmatched_payments"]:
+        col1, col2, col3, col4 = st.columns([1, 2.5, 1.5, 1])
+        col1.write(payment["payment_id"])
+        col2.write(payment["name"])
+        col3.write(payment["payment_date"])
+        col4.write(f'{payment["amount"]:.2f} lei')
 
 
 initialize_session_state()
@@ -188,6 +270,7 @@ if st.session_state.results is not None:
         st.session_state.invoices,
         st.session_state.accepted_matches,
         st.session_state.rejected_matches,
+        st.session_state.manual_unmatched_matches,
     )
 
     results = st.session_state.results
@@ -204,3 +287,4 @@ if st.session_state.results is not None:
     display_direct_matches(results)
     display_possible_matches(results)
     display_unmatched(results)
+    display_unmatched_payments(results)

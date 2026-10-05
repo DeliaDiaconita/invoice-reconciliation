@@ -11,7 +11,9 @@ def load_payments(file):
     reader = csv.DictReader(text_file, delimiter=";")
 
     for row in reader:
-        amount = float(row["suma"])
+        amount_text = row["suma"].strip().replace(",", ".")
+        amount = float(amount_text)
+
         if amount > 0:
             payment = {
                 "payment_id": len(payments) + 1,
@@ -22,15 +24,18 @@ def load_payments(file):
             }
 
             payments.append(payment)
+
     return payments
 
 
 # CITIRE FACTURI DIN EXCEL
 def load_invoices(file):
     workbook = load_workbook(file)
-    sheet = workbook.active
+    sheet = workbook.worksheets[0]
 
     invoices = []
+
+    seen_invoice_numbers = set()
 
     for row in range(5, sheet.max_row + 1):
         client = sheet[f"B{row}"].value
@@ -41,11 +46,18 @@ def load_invoices(file):
         if invoice_number is None:
             continue
 
+        if invoice_number in seen_invoice_numbers:
+            continue
+
         invoice = {
             "client": client,
             "invoice_number": invoice_number,
             "issue_date": issue_date.replace("/", "."),
             "amount": amount,
         }
+
         invoices.append(invoice)
+
+        seen_invoice_numbers.add(invoice_number)
+
     return invoices
